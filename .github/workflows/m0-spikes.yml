@@ -1,0 +1,36 @@
+# Runs the Milestone 0 Windows spikes on a GitHub-hosted runner. This proves
+# they build and run; CI runners are shared VMs, so the numbers are NOT
+# reference measurements (see docs/PERFORMANCE.md).
+name: M0 Windows spikes
+
+on:
+  pull_request:
+    paths:
+      - "prototypes/**"
+      - ".github/workflows/m0-spikes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  spikes:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup toolchain install && rustup show active-toolchain
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: prototypes
+      - name: Run spikes (quick mode)
+        shell: powershell
+        run: .\prototypes\run-windows-spikes.ps1 -Runs 3 -SizeGB 1 -TimeoutSec 120
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: m0-spike-results
+          path: |
+            prototypes/spike-results.txt
+            ${{ runner.temp }}/slashpad-spikes/render.jsonl

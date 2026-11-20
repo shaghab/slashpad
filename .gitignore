@@ -26,3 +26,4 @@ rustc-ice-*.txt
 # SlashPad: generated test data (never commit)
 testdata/
 *.slashpad-tmp
+prototypes/spike-results.txt

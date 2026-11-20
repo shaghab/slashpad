@@ -1,9 +1,13 @@
 [package]
 name = "m0-scan"
 version = "0.1.0"
-edition = "2024"
+edition.workspace = true
+publish.workspace = true
 
 [dependencies]
-memchr = "2.8.3"
-memmap2 = "0.9.12"
-ropey = "1.6.1"
+memchr = "2.8"
+memmap2 = "0.9"
+ropey = "1.6"
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_System_ProcessStatus", "Win32_System_Threading", "Win32_Storage_FileSystem"] }
