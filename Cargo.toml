@@ -1,0 +1,31 @@
+[workspace]
+resolver = "3"
+members = ["crates/slashpad-text"]
+exclude = ["prototypes"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/shaghab/slashpad"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+undocumented_unsafe_blocks = "deny"
+unwrap_used = "warn"
+expect_used = "warn"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+
+# Benchmarks use the release profile plus debug info so profilers can symbolise.
+[profile.bench]
+inherits = "release"
+debug = "line-tables-only"
+strip = false
