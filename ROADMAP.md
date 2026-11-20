@@ -10,9 +10,9 @@ tests → `cargo fmt` / `clippy` / `test` → release build → benchmarks → d
 - [x] Evaluate UI technologies and text-buffer structures ([ARCHITECTURE](docs/ARCHITECTURE.md))
 - [x] Large-file scanning prototype (`prototypes/m0-scan`) — results in BENCHMARKS
 - [x] Risk register, performance methodology, testing strategy
-- [ ] **Owner approval of decisions D-01…D-16** ([decisions](docs/decisions/README.md))
-- [ ] Piece-tree prototype: insert/delete/line lookup + proptest vs. oracle + criterion benches
-      (runs on any OS)
+- [x] **Owner approval of decisions D-01…D-16** (2026-11-20, all recommendations) ([decisions](docs/decisions/README.md))
+- [x] Piece-tree prototype: insert/delete/line lookup + proptest vs. oracle + criterion benches
+      (`crates/slashpad-text`)
 - [ ] Windows spikes (need a Windows 11 machine or CI runner):
   - [ ] Hello window variants: empty Win32 / + Direct2D+DirectWrite / + DirectWrite-on-GDI-bitmap →
         cold/warm start, private WS, commit (decides R-01)

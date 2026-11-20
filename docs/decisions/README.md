@@ -5,16 +5,18 @@ ADRs use the format: Context · Decision · Consequences · Alternatives. Status
 
 | ADR | Title | Status |
 |---|---|---|
-| [0001](0001-ui-stack-win32-directwrite.md) | Win32 + `windows` crate + DirectWrite custom editor | Proposed |
-| [0002](0002-persistent-piece-tree.md) | Persistent piece tree over raw UTF-8 bytes | Proposed |
-| [0003](0003-no-mmap-by-default.md) | Bounded chunk cache, not memory mapping, for file-backed sources | Proposed |
-| [0004](0004-lossless-encoding-policy.md) | Lossless encoding round-trip policy | Proposed |
-| [0005](0005-document-modes.md) | Normal / Large / Extreme document modes | Proposed |
-| [0006](0006-atomic-save.md) | Atomic save via temp file + `ReplaceFileW` | Proposed |
-| [0007](0007-file-sharing-and-staleness.md) | Never lock user files; detect staleness | Proposed |
-| [0008](0008-recovery-journal.md) | Append-only recovery journal | Proposed |
+| [0001](0001-ui-stack-win32-directwrite.md) | Win32 + `windows` crate + DirectWrite custom editor | Accepted |
+| [0002](0002-persistent-piece-tree.md) | Persistent piece tree over raw UTF-8 bytes | Accepted |
+| [0003](0003-no-mmap-by-default.md) | Bounded chunk cache, not memory mapping, for file-backed sources | Accepted |
+| [0004](0004-lossless-encoding-policy.md) | Lossless encoding round-trip policy | Accepted |
+| [0005](0005-document-modes.md) | Normal / Large / Extreme document modes | Accepted |
+| [0006](0006-atomic-save.md) | Atomic save via temp file + `ReplaceFileW` | Accepted |
+| [0007](0007-file-sharing-and-staleness.md) | Never lock user files; detect staleness | Accepted |
+| [0008](0008-recovery-journal.md) | Append-only recovery journal | Accepted |
 
-## Decisions requiring owner approval
+## Owner decisions
+
+All recommendations below were **approved by the owner on 2026-11-20**.
 
 | # | Decision | Recommendation | Main alternative |
 |---|---|---|---|

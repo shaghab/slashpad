@@ -1,6 +1,6 @@
 # ADR-0005: Normal / Large / Extreme document modes
 
-Status: Proposed · Date: 2026-11-20
+Status: Accepted · Date: 2026-11-20
 
 ## Decision
 One engine, three policies chosen at open (thresholds are settings, tuned in Milestone 4):

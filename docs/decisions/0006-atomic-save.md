@@ -1,6 +1,6 @@
 # ADR-0006: Atomic save via temp file + ReplaceFileW
 
-Status: Proposed · Date: 2026-11-20
+Status: Accepted · Date: 2026-11-20
 
 ## Decision
 Write the snapshot to a hidden temp file in the destination directory, `FlushFileBuffers`, then

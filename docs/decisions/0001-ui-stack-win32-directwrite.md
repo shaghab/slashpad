@@ -1,6 +1,6 @@
 # ADR-0001: Win32 + `windows` crate + DirectWrite custom editor
 
-Status: Proposed · Date: 2026-11-20
+Status: Accepted · Date: 2026-11-20
 
 ## Context
 Requirements: idle private WS < 20 MB, cold start < 300 ms, native Windows behaviour, files up to

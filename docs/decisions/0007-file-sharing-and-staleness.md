@@ -1,6 +1,6 @@
 # ADR-0007: Never lock user files; detect staleness
 
-Status: Proposed · Date: 2026-11-20
+Status: Accepted · Date: 2026-11-20
 
 ## Context
 File-backed documents read from the original file after open. Locking it would break log writers,

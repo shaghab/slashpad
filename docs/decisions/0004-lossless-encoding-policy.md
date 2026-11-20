@@ -1,6 +1,6 @@
 # ADR-0004: Lossless encoding round-trip policy
 
-Status: Proposed · Date: 2026-11-20
+Status: Accepted · Date: 2026-11-20
 
 ## Decision
 1. UTF-8 files keep their raw bytes; invalid sequences are displayed as U+FFFD but preserved.

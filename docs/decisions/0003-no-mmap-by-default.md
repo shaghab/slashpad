@@ -1,6 +1,6 @@
 # ADR-0003: Bounded chunk cache, not memory mapping, for file-backed sources
 
-Status: Proposed · Date: 2026-11-20
+Status: Accepted · Date: 2026-11-20
 
 ## Context
 Large/Extreme documents read the original file lazily. Options: memory-map it, or positional

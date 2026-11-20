@@ -31,3 +31,40 @@ crate opts into an edition in `Cargo.toml`, and crates of different editions lin
 Rust has no exceptions. Fallible functions return `Result`; `?` returns early with the error
 (converting it via `From`). Like checked exceptions, but values: they compose with iterators and
 cost nothing when not taken. Panics exist but are reserved for bugs, not for "file not found".
+
+### `Arc`, `Arc::make_mut` and copy-on-write (piece tree)
+`Arc<T>` is an atomically reference-counted shared pointer (like `std::shared_ptr<const T>`).
+It only gives shared (`&T`) access — Rust forbids mutation through shared pointers. 
+`Arc::make_mut(&mut arc)` returns `&mut T`: if this `Arc` is the only owner it mutates in place;
+otherwise it clones the value first and repoints this `Arc` at the clone. The tree's edit
+functions call it on every node along the edited path, which yields copy-on-write persistence
+for free: versions kept by undo or by a background worker never see later edits.
+`Rc` is the non-atomic variant; we use `Arc` because snapshots cross threads (`Send + Sync`).
+
+### `Arc<[u8]>`: a shared slice with no separate length allocation
+`Arc<[u8]>` is a *fat pointer* (pointer + length, like `std::span` plus a refcount). Converting a
+`Vec<u8>` into it copies once, because the refcount must sit in front of the bytes.
+
+### `cfg(test)` constants
+`#[cfg(test)] const MAX_ENTRIES: usize = 4;` replaces the production value only when the crate's
+own unit tests are compiled, so small inputs build deep trees and exercise every split/merge path.
+Integration tests in `tests/` link the normal library build and therefore see production values —
+we use both.
+
+### Borrowing iterators (`Chunks<'a>`)
+`Chunks<'a>` yields `&'a [u8]` slices pointing straight into the tree. The lifetime `'a` ties
+them to the borrowed `TextBuffer`, so the compiler rejects any edit while the iterator (or a
+slice from it) is alive — the iterator-invalidation bug class from C++ becomes a compile error.
+To read while editing, clone the buffer (O(1)) and iterate the clone.
+
+### Property-based testing with `proptest`
+Instead of hand-picked cases, tests describe *strategies* for generating inputs (random text
+biased towards `\r`, `\n` and UTF-8 fragments; random edit scripts) and assert that the tree
+always agrees with a trivially correct model (`Vec<u8>`). Failures are automatically shrunk to a
+minimal reproducing case. As a check, deliberately breaking the CRLF-junction logic made the
+property tests fail immediately.
+
+### Monoids
+`Summary::combine` is associative with an identity (the empty summary). That algebraic property
+is what lets any subtree cache its summary and lets queries combine cached summaries in any
+grouping — and it is how a CRLF split across two pieces is counted once.

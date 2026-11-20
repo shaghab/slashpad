@@ -38,3 +38,44 @@ cd prototypes/m0-scan && cargo build --release
 ./target/release/m0-scan gen /path/1g.log 1024
 ./target/release/m0-scan index /path/1g.log
 ```
+
+## 2026-11-20 — M0 piece-tree prototype (`crates/slashpad-text`)
+
+**Environment:** same Linux container as above (Xeon @ 2.10 GHz, 4 vCPU), Rust 1.97.0,
+`cargo bench` profile (release + LTO, line debug info), criterion 0.8 with
+`--warm-up-time 1 --measurement-time 3–4`. Medians shown. Data: generated UTF-8 log lines with CRLF.
+`MAX_PIECE_LEN` = 16 KiB, 16 entries per node. Not reference-machine numbers.
+
+| Benchmark | Piece tree | `ropey` 1.6 | Notes |
+|---|---|---|---|
+| Build from bytes, 10 MiB | 6.9 ms (1.4 GiB/s)* | 4.9 ms | *measured with 64 KiB pieces |
+| Build from bytes, 100 MiB | 123 ms (≈ 810 MiB/s) | 112 ms | dominated by line-break summarising |
+| Random 1-byte insert, 10 MiB doc | 1.6 µs | 0.58 µs | after millions of edits (fragmented tree) |
+| Same, previous version kept alive (undo) | 3.5 µs | — | path copying cost |
+| Sequential typing | 0.19 µs/char | — | merged into ≤ 1 KiB pieces |
+| Random 16-byte delete | 2.0 µs* | — | |
+| `line_start` (random line), 100 MiB + 10 k edits | 2.9 µs | 0.77 µs (`line_to_byte`) | 64 KiB pieces: 4.0 µs |
+| `line_of_offset`, same | 2.6 µs | 0.77 µs (`byte_to_line`) | 64 KiB pieces: 4.2 µs |
+| Iterate all chunks + count LF, 100 MiB | 16 ms (6.0 GiB/s)* | — | zero-copy `Chunks` iterator |
+
+**Memory per retained version** (`cargo run --release -p slashpad-text --example snapshot_memory`):
+100 MiB document (RSS 102 MiB, i.e. ≈ 2 % structure overhead), then N random single-byte
+inserts with *every* intermediate version kept alive:
+
+| Retained versions | RSS growth | Per version |
+|---|---|---|
+| 1 000 | +1 MiB | ≈ 1.6–1.7 KB |
+| 10 000 | +16 MiB | ≈ 1.7 KB (64 KiB pieces) |
+| 100 000 | +195 MiB | ≈ 2.0 KB (64 KiB pieces) |
+
+This is the worst case (each edit at a random place). Undo groups coalesce typing, so real
+histories retain far fewer versions; Large-mode history limits (ADR-0005) bound it anyway.
+
+**Conclusions**
+1. All edit operations are 0.2–3.5 µs: over three orders of magnitude inside the 16 ms typing budget (P-08).
+2. Snapshots are O(1) and an edit while a snapshot is alive costs ≈ 2× an in-place edit.
+3. Lookups are slower than ropey because the last step scans inside a piece; a viewport needs
+   one lookup, then iterates forward, so this is not on a critical path. Revisit if profiling says so.
+4. Build is ≈ 0.8–1.4 GiB/s; a Normal-mode document (≤ 32 MB) builds in ≈ 25–40 ms on this CPU.
+   Loading via `Vec<u8>` → `Arc<[u8]>` copies once (transient 2× peak); acceptable within the
+   Normal-mode threshold, to be revisited in M4.

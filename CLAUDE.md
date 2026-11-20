@@ -24,5 +24,6 @@ concept is introduced) → summarise results, limitations, debt.
 
 ## Environment notes
 Cloud sessions run on Linux: core crates build and test there; the Windows binary can be checked
-with `cargo check --target x86_64-pc-windows-msvc` but not linked or run. Windows tests and
+with `cargo clippy --lib --target x86_64-pc-windows-msvc` but not linked or run (`--all-targets`
+fails there: criterion's `alloca` dependency needs the MSVC C toolchain). Windows tests and
 benchmarks run on `windows-latest` CI or the owner's machine.

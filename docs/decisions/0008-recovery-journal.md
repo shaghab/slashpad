@@ -1,6 +1,6 @@
 # ADR-0008: Append-only recovery journal
 
-Status: Proposed · Date: 2026-11-20
+Status: Accepted · Date: 2026-11-20
 
 ## Decision
 Each dirty document has `%LOCALAPPDATA%\SlashPad\Recovery\<uuid>.journal` (portable mode: next to

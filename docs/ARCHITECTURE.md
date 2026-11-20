@@ -1,7 +1,7 @@
 # SlashPad — Architecture
 
-Status: **Proposed (Milestone 0)**. Nothing here is final until the decisions in
-[decisions/README.md](decisions/README.md) are approved.
+Status: **Accepted (Milestone 0, 2026-11-20)**. Decisions are recorded in
+[decisions/README.md](decisions/README.md).
 
 Contents
 1. [UI technology evaluation](#1-ui-technology-evaluation)
@@ -88,16 +88,23 @@ gracefully. `mmap` remains an option to benchmark on Windows for read-only Extre
 ### Recommended design (ADR-0002)
 
 ```
-Document
- └─ TextBuffer (persistent piece tree, Arc-shared nodes)
-     ├─ OriginalSource      — immutable bytes of the file as opened
-     │     ├─ InMemory(Arc<[u8]>)          Normal mode
-     │     └─ FileBacked(ChunkCache)       Large / Extreme mode (+ sparse line index)
-     └─ AddBuffer           — append-only, chunked (Arc<[u8]> chunks, never reallocated)
+TextBuffer { root: Arc<Node> }                 clone() = O(1) snapshot
+ Node  = { summary, Leaf(Vec<Piece>) | Internal(Vec<Arc<Node>>) }   ≤ 16 entries
+ Piece = { data: Arc<[u8]>, start, summary }   ≤ 16 KiB, view into shared storage
+ Summary = { bytes, breaks, first_lf, last_cr } — an associative "monoid", so a CRLF
+           split across two pieces/subtrees is still counted once
 
-Piece { source: Original | Add, start: u64, len: u32, line_breaks: u32* }
-Node aggregates: total bytes, total line breaks (*Unknown until indexed for original ranges)
+Storage behind pieces:
+  Normal mode : the loaded file as one Arc<[u8]>; inserted text as small Arc<[u8]> runs
+  Large/Extreme (M4): file-backed source via bounded chunk cache + sparse line index
 ```
+
+*As built in the M0 prototype (`crates/slashpad-text`):* instead of a single global append-only
+"add buffer", every inserted run gets its own `Arc<[u8]>` and consecutive typing is merged into the
+preceding piece while it is under 1 KiB. This needs no `unsafe` code, no locking, and freeing a
+snapshot frees exactly the storage only it referenced. Copy-on-write is provided by
+`Arc::make_mut`: nodes owned by a single version are mutated in place; shared nodes are cloned
+along the edited path only.
 
 - **Content is UTF-8 bytes** (`[u8]`, not `str`): this is what lets us preserve invalid sequences
   byte-for-byte. Rendering decodes lossily; editing operations only ever insert valid UTF-8.
@@ -114,9 +121,9 @@ Node aggregates: total bytes, total line breaks (*Unknown until indexed for orig
 - **Grapheme and visual positions** are never stored in the tree. They are computed for the
   visible region only.
 
-Validation plan: a prototype in Milestone 0 with property tests (random edit sequences vs. a
-`ropey`/`Vec<u8>` oracle) and benchmarks (insert/delete throughput, line lookup, memory per edit).
-Only the newline-scanning half has been prototyped so far ([BENCHMARKS.md](BENCHMARKS.md)).
+Validation: the M0 prototype passes property tests (random edit sequences vs. a `Vec<u8>`
+oracle, snapshot isolation) and has benchmarks for build, edits, lookups, scanning and
+memory per retained version — see [BENCHMARKS.md](BENCHMARKS.md).
 
 ---
 

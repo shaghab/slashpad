@@ -16,4 +16,6 @@ telemetry, ads, accounts or background processes.
 - [Testing strategy](docs/TESTING.md) · [Risks](docs/RISKS.md) · [Rust learning notes](docs/RUST_LEARNING.md)
 
 ## Licence
-MIT — see [LICENSE](LICENSE). (Dual MIT/Apache-2.0 is under consideration, decision D-03.)
+Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your option.
+Unless you explicitly state otherwise, any contribution you intentionally submit for inclusion
+shall be dual licensed as above, without any additional terms or conditions.
