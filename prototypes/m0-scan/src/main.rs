@@ -6,9 +6,10 @@
 //!   m0-scan pread <path>                  bounded-chunk read + memchr newline count
 //!   m0-scan mmap <path>                   memory-mapped + memchr newline count
 //!   m0-scan index <path>                  build sparse line index (every 1024th line)
+//!   m0-scan nobuf <path>                  like index, but bypassing the OS cache (Windows; = cold read)
 //!   m0-scan ropey <path>                  load whole file into a ropey::Rope
 //!
-//! Prints elapsed time and peak RSS (Linux VmHWM) so results can be compared.
+//! Prints elapsed time and peak resident memory (Linux VmHWM, Windows PeakWorkingSetSize).
 
 use std::fs::File;
 use std::io::{BufWriter, Read, Write};
@@ -16,6 +17,8 @@ use std::time::Instant;
 
 const CHUNK: usize = 1 << 20; // 1 MiB
 
+/// Peak resident memory in KiB: Linux `VmHWM`, Windows `PeakWorkingSetSize`.
+#[cfg(not(windows))]
 fn peak_rss_kb() -> u64 {
     std::fs::read_to_string("/proc/self/status")
         .ok()
@@ -25,6 +28,59 @@ fn peak_rss_kb() -> u64 {
                 .and_then(|l| l.split_whitespace().nth(1)?.parse().ok())
         })
         .unwrap_or(0)
+}
+
+#[cfg(windows)]
+#[allow(clippy::undocumented_unsafe_blocks)]
+fn peak_rss_kb() -> u64 {
+    use windows::Win32::System::ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS};
+    use windows::Win32::System::Threading::GetCurrentProcess;
+    let mut pmc = PROCESS_MEMORY_COUNTERS {
+        cb: std::mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32,
+        ..Default::default()
+    };
+    match unsafe { GetProcessMemoryInfo(GetCurrentProcess(), &mut pmc, pmc.cb) } {
+        Ok(()) => pmc.PeakWorkingSetSize as u64 / 1024,
+        Err(_) => 0,
+    }
+}
+
+/// Unbuffered (cache-bypassing) read + sparse index: equivalent to a cold read.
+/// `FILE_FLAG_NO_BUFFERING` needs sector-aligned buffers and transfer sizes,
+/// obtained here without `unsafe` by aligning inside an oversized `Vec`.
+#[cfg(windows)]
+fn nobuf_index(path: &str) -> std::io::Result<(u64, usize)> {
+    use std::os::windows::fs::OpenOptionsExt;
+    use windows::Win32::Storage::FileSystem::{FILE_FLAG_NO_BUFFERING, FILE_FLAG_SEQUENTIAL_SCAN};
+    const ALIGN: usize = 4096;
+    let mut f = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags((FILE_FLAG_NO_BUFFERING | FILE_FLAG_SEQUENTIAL_SCAN).0)
+        .open(path)?;
+    let mut storage = vec![0u8; CHUNK + ALIGN];
+    let offset = storage.as_ptr().align_offset(ALIGN);
+    let buf = &mut storage[offset..offset + CHUNK];
+    let mut index: Vec<u64> = vec![0];
+    let (mut lines, mut base) = (0u64, 0u64);
+    loop {
+        let n = f.read(buf)?;
+        if n == 0 {
+            break;
+        }
+        for pos in memchr::memchr_iter(b'\n', &buf[..n]) {
+            lines += 1;
+            if lines.is_multiple_of(1024) {
+                index.push(base + pos as u64 + 1);
+            }
+        }
+        base += n as u64;
+    }
+    Ok((lines, index.len()))
+}
+
+#[cfg(not(windows))]
+fn nobuf_index(_path: &str) -> std::io::Result<(u64, usize)> {
+    Err(std::io::Error::other("nobuf mode is Windows-only"))
 }
 
 fn generate(path: &str, size_mb: u64, long: bool) -> std::io::Result<()> {
@@ -98,7 +154,7 @@ fn main() -> std::io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let (cmd, path) = (args.get(1).map(String::as_str), args.get(2));
     let Some(path) = path else {
-        eprintln!("usage: m0-scan <gen|pread|mmap|index|ropey> <path> [...]");
+        eprintln!("usage: m0-scan <gen|pread|mmap|index|nobuf|ropey> <path> [...]");
         std::process::exit(2);
     };
     let t = Instant::now();
@@ -112,6 +168,10 @@ fn main() -> std::io::Result<()> {
         Some("mmap") => format!("lines={}", mmap_count(path)?),
         Some("index") => {
             let (l, e) = sparse_index(path)?;
+            format!("lines={l} index_entries={e}")
+        }
+        Some("nobuf") => {
+            let (l, e) = nobuf_index(path)?;
             format!("lines={l} index_entries={e}")
         }
         Some("ropey") => {

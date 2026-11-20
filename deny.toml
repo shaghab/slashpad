@@ -1,0 +1,29 @@
+# cargo-deny configuration: licence policy, vulnerability advisories, and
+# dependency sources. Run locally with `cargo deny check`.
+
+[graph]
+all-features = true
+
+[advisories]
+# Fail on any vulnerability or unsound advisory; warn on unmaintained crates.
+yanked = "deny"
+
+[licenses]
+# Licences compatible with distributing SlashPad under MIT OR Apache-2.0.
+# Only licences actually in use are listed: adding one is a deliberate decision
+# (e.g. BSD-3-Clause arrives with encoding_rs in Milestone 5).
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Unlicense",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

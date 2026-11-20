@@ -13,12 +13,15 @@ tests → `cargo fmt` / `clippy` / `test` → release build → benchmarks → d
 - [x] **Owner approval of decisions D-01…D-16** (2026-11-20, all recommendations) ([decisions](docs/decisions/README.md))
 - [x] Piece-tree prototype: insert/delete/line lookup + proptest vs. oracle + criterion benches
       (`crates/slashpad-text`)
-- [ ] Windows spikes (need a Windows 11 machine or CI runner):
-  - [ ] Hello window variants: empty Win32 / + Direct2D+DirectWrite / + DirectWrite-on-GDI-bitmap →
-        cold/warm start, private WS, commit (decides R-01)
-  - [ ] IMM32 composition in a custom-drawn control with Japanese & Chinese IMEs (R-02)
-  - [ ] `ReplaceFileW` while holding a shared-delete read handle: NTFS, SMB share (R-05)
-  - [ ] Cold-cache chunked read of 10 GB on NTFS
+- [x] CI: fmt, clippy, test, release build on Ubuntu + Windows; `cargo deny` audit
+- [ ] Windows spikes — written (`prototypes/`, run with `prototypes/run-windows-spikes.ps1`),
+      smoke-run on CI by `.github/workflows/m0-spikes.yml`; **awaiting owner's reference-machine results**:
+  - [ ] `m0-win-render`: empty / GDI / Direct2D / DirectWrite-on-GDI-bitmap → first paint, private WS,
+        commit (decides R-01)
+  - [ ] `m0-win-ime`: IMM32 inline composition with Japanese & Chinese IMEs (R-02, manual checklist)
+  - [ ] `m0-win-save`: `ReplaceFileW` with shared-delete handle, foreign handle, read-only, hard link,
+        ADS; NTFS + optionally SMB/FAT (R-05)
+  - [ ] `m0-scan nobuf`: cold (unbuffered) read + sparse index of 10 GB and a 1 GB single-line file
 - **Exit:** approved ADRs; prototype measurements recorded; go/no-go on renderer.
 
 ## Milestone 1 — Minimal working editor

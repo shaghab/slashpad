@@ -177,8 +177,10 @@ impl TextBuffer {
 
     /// Copies the bytes of `range` into a new vector.
     pub fn slice_to_vec(&self, range: Range<usize>) -> Result<Vec<u8>, EditError> {
+        // `chunks` validates the range, so the capacity below is bounded by `len()`.
+        let chunks = self.chunks(range.clone())?;
         let mut out = Vec::with_capacity(range.len());
-        for chunk in self.chunks(range)? {
+        for chunk in chunks {
             out.extend_from_slice(chunk);
         }
         Ok(out)

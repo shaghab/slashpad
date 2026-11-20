@@ -228,3 +228,17 @@ fn invalid_utf8_is_preserved() {
     expected.push(0xA9);
     assert_matches_oracle(&buf, &expected);
 }
+
+#[test]
+fn slice_to_vec_rejects_huge_range_without_allocating() {
+    // Regression test for shaghab/slashpad#2: the range must be validated
+    // before the output vector reserves `range.len()` bytes.
+    let buf = TextBuffer::new();
+    assert_eq!(
+        buf.slice_to_vec(0..usize::MAX),
+        Err(EditError::OutOfBounds {
+            offset: usize::MAX,
+            len: 0
+        })
+    );
+}

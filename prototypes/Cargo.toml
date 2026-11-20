@@ -1,0 +1,17 @@
+# Throwaway Milestone 0 experiments. A separate workspace so they never affect
+# the product's dependency graph, lints, or CI gates.
+[workspace]
+resolver = "3"
+members = ["m0-scan", "m0-win-render", "m0-win-save", "m0-win-ime"]
+
+[workspace.package]
+edition = "2024"
+publish = false
+
+[workspace.dependencies]
+windows = "0.62"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
