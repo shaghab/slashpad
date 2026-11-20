@@ -1,2 +1,2 @@
-# hashpad
-A modern Notepad alternative
+# slashpad
+A modern Notepad
